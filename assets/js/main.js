@@ -18,7 +18,6 @@ const els = {
     appuntamenti: document.querySelector('#upcoming-list'),
     risultati: document.querySelector('#results-row'),
     risultatiStato: document.querySelector('#results-status'),
-    filtriRisultati: document.querySelector('#results-filters'),
     dettagli: document.querySelector('#team-details'),
     modale: document.querySelector('#event-modal'),
     modaleTitolo: document.querySelector('#event-modal-title'),
@@ -28,7 +27,7 @@ const els = {
 // stato
 const stato = {
     risultati: [],
-   filtri: { preferiti: 'Tutti', risultati: 'Tutti' },
+    filtri: { preferiti: 'Tutti'},
     idSelezionata: null,
     controllerRicerca: null,
     cacheProssimi: new Map(),
@@ -37,7 +36,7 @@ const stato = {
     richiestaAppuntamenti: 0,
 };
 
-/* render */ 
+/* render */
 
 /* svuota il contenitore e ci inserisce i nuovi elementi. */
 function mostra(contenitore, ...elementi) {
@@ -54,7 +53,7 @@ function opzioniGriglia() {
     };
 }
 
-/* disegna una griglia di card con la sua barra di filtri (per lega). */
+/* disegna una griglia di card con la sua barra di filtri per sport. */
 function renderGriglia({ lista, scope, contenitore, contenitoreFiltri }) {
     const sport = stato.filtri[scope];
 
@@ -82,19 +81,13 @@ function renderPreferiti() {
 }
 
 function renderRisultati() {
-    renderGriglia({
-        lista: stato.risultati,
-        scope: 'risultati',
-        contenitore: els.risultati,
-        contenitoreFiltri: els.filtriRisultati,
-    });
+    mostra(els.risultati, ...ui.cardsSquadre(stato.risultati, opzioniGriglia()));
 }
 
-/* svuota la griglia dei risultati e mostra un messaggio/spinner/errore. */
+/* svuota la griglia dei risultati e mostra (se passato) un messaggio/spinner/errore. */
 function svuotaRisultati(...elementi) {
     stato.risultati = [];
     els.risultati.textContent = '';
-    els.filtriRisultati.hidden = true;
     mostra(els.risultatiStato, ...elementi);
 }
 
@@ -124,7 +117,6 @@ async function eseguiRicerca(testo) {
     try {
         const squadre = await cercaSquadre(query, controller.signal);
         stato.risultati = squadre;
-         stato.filtri.risultati = 'Tutti';
         if (squadre.length) {
             els.risultatiStato.textContent = '';
         } else {
@@ -306,8 +298,7 @@ function gestisciClickFiltro(event) {
     const btn = event.target.closest('[data-filtro]');
     if (!btn) return;
     stato.filtri[btn.dataset.scope] = btn.dataset.filtro;
-    if (btn.dataset.scope === 'preferiti') renderPreferiti();
-    else renderRisultati();
+    renderPreferiti();
 }
 
 function init() {
@@ -330,7 +321,6 @@ function init() {
 
     // filtri
     els.filtriPreferiti.addEventListener('click', gestisciClickFiltro);
-    els.filtriRisultati.addEventListener('click', gestisciClickFiltro);
 
     // eventi in modale
     document.addEventListener('click', (event) => {

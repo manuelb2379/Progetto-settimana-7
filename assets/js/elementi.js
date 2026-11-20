@@ -70,6 +70,7 @@ export function nessunaPerSport() {
     col.append(messaggio('Nessuna squadra per questo sport.'));
     return col;
 }
+
 // card squadra 
 
 function stemma(squadra) {

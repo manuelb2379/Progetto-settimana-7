@@ -41,21 +41,21 @@ export class Evento {
         return new Date(`${this.data}T${ora}Z`);
     }
 
-    /** Data nel formato italiano, es. "17/05/2026" (vuota se manca). */
+    /* Data nel formato italiano, es. "17/05/2026" (vuota se manca). */
     formattaData() {
         const d = this.dataOra;
         if (!d || Number.isNaN(d.getTime())) return '';
         return FORMATO_DATA.format(d);
     }
 
-    /** Ora locale dell'utente, es. "21:00" (vuota se manca). */
+    /* Ora locale dell'utente, es. "21:00" (vuota se manca). */
     formattaOra() {
         const d = this.dataOra;
         if (!d || Number.isNaN(d.getTime()) || !this.ora) return '';
         return FORMATO_ORA.format(d);
     }
 
-    /** Punteggio pronto da mostrare, es. "3 – 1" (vuoto se la partita non è ancora giocata). */
+    /* Punteggio pronto da mostrare, es. "3 – 1" (vuoto se la partita non è ancora giocata). */
     punteggio() {
         if (!this.haRisultato) return '';
         return `${this.golCasa} – ${this.golTrasferta}`;
