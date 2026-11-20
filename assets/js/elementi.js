@@ -161,10 +161,19 @@ export function cardsSquadre(squadre, { idsPreferiti, inPreferiti = false }) {
 
 const CLASSI_ESITO = { V: 'text-bg-success', P: 'text-bg-secondary', S: 'text-bg-danger' };
 
-function rigaEvento(evento, { idSquadra = null, etichetta = '' } = {}) {
+function rigaEvento(evento, { idSquadra = null, etichetta = '', cliccabile = false } = {}) {
     const li = creaElemento('li');
 
-    // riga piccola: (squadra ·) data · ora
+    if (cliccabile) {
+        li.classList.add('event-item');
+        li.dataset.eventId = evento.id;
+        li.tabIndex = 0;
+        li.setAttribute('role', 'button');
+        li.setAttribute('aria-label', `Dettagli di ${evento.nome}`);
+        if (idSquadra) li.dataset.teamId = idSquadra;
+    }
+
+    // riga piccola
     const quando = [evento.formattaData(), evento.formattaOra()].filter(Boolean).join(' · ');
     const info = creaElemento('small', 'd-block text-body-secondary');
     if (etichetta) info.append(creaElemento('strong', '', etichetta), ' · ');
@@ -201,7 +210,12 @@ export function appuntamenti(items, nErrori = 0) {
 
     const card = creaElemento('div', 'card border-0 shadow-sm');
     const body = creaElemento('div', 'card-body px-4 py-2');
-    const righe = items.map(({ evento, squadra }) => rigaEvento(evento, { etichetta: squadra.nome }));
+
+    const righe = items.map(({ evento, squadra }) => rigaEvento(evento, {
+        etichetta: squadra.nome,
+        idSquadra: squadra.id,
+        cliccabile: true,
+    }));
 
     body.append(listaEventi(righe, 'Nessun evento in programma per le tue preferite'));
     card.append(body);
@@ -236,7 +250,7 @@ function infoSquadra(squadra) {
 
 function colonnaEventi(titolo, eventi, idSquadra, testoVuoto) {
     const col = creaElemento('div', 'col-12 col-md-6');
-    const righe = eventi.map((e) => rigaEvento(e, { idSquadra }));
+    const righe = eventi.map((e) => rigaEvento(e, { idSquadra, cliccabile: true }));
     col.append(creaElemento('h3', 'details-heading h5', titolo), listaEventi(righe, testoVuoto));
     return col;
 }
@@ -266,5 +280,72 @@ export function modaleSquadra(squadra, prossimi, ultimi) {
     );
 
     box.append(infoSquadra(squadra), row);
+    return box;
+}
+
+/** Bottone per tornare dai dettagli della partita a quelli della squadra. */
+function bottoneTorna() {
+    const btn = creaElemento('button', 'btn btn-sm btn-outline-secondary mb-3', '← Torna alla squadra');
+    btn.type = 'button';
+    btn.dataset.action = 'torna';
+    return btn;
+}
+
+/** Contenuto della modale mentre arriva il dettaglio della partita. */
+export function modaleEventoLoading() {
+    const box = creaElemento('div');
+    box.append(bottoneTorna(), spinner('Carico i dettagli della partita...'));
+    return box;
+}
+
+/** Contenuto della modale se il dettaglio della partita non si carica. */
+export function modaleEventoErrore(messaggioErrore) {
+    const box = creaElemento('div');
+    box.append(bottoneTorna(), errore(messaggioErrore));
+    return box;
+}
+
+/** Contenuto della modale con tutti i dati della partita. */
+export function modaleEvento(evento) {
+    const box = creaElemento('div');
+    box.append(bottoneTorna());
+
+    if (evento.immagine) {
+        const img = creaElemento('img', 'img-fluid rounded mb-3');
+        img.src = evento.immagine;
+        img.alt = '';
+        box.append(img);
+    }
+
+    // Casa - punteggio - trasferta
+    const punteggio = evento.haRisultato ? evento.punteggio() : 'vs';
+    const sfida = creaElemento('div', 'd-flex justify-content-center align-items-center gap-3 text-center mb-4');
+    sfida.append(
+        creaElemento('span', 'fw-bold flex-fill', evento.casa),
+        creaElemento('span', 'badge text-bg-dark fs-6', punteggio),
+        creaElemento('span', 'fw-bold flex-fill', evento.trasferta),
+    );
+
+    // Elenco informazioni (solo quelle presenti)
+    const info = [
+        ['Competizione', evento.lega],
+        ['Stagione', evento.stagione],
+        ['Giornata', evento.giornata],
+        ['Data', evento.formattaData()],
+        ['Ora', evento.formattaOra()],
+        ['Stadio', evento.stadio],
+        ['Città', [evento.citta, evento.paese].filter(Boolean).join(', ')],
+        ['Stato', evento.stato],
+    ].filter(([, valore]) => valore);
+
+    const dl = creaElemento('dl', 'row mb-0 small');
+    info.forEach(([etichetta, valore]) => {
+        dl.append(
+            creaElemento('dt', 'col-5 text-body-secondary', etichetta),
+            creaElemento('dd', 'col-7', valore),
+        );
+    });
+
+    box.append(sfida, dl);
     return box;
 }

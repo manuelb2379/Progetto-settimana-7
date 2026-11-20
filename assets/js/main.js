@@ -1,4 +1,4 @@
-import { cercaSquadre, prossimiEventi, ultimiRisultati } from './api.js';
+import { cercaSquadre, prossimiEventi, ultimiRisultati, dettaglioEvento } from './api.js';
 import { getPreferiti, isPreferita, aggiungiPreferito, rimuoviPreferito, leggiTema, salvaTema } from './storage.js';
 import * as ui from './elementi.js';
 import { debounce } from './strumenti.js';
@@ -16,17 +16,24 @@ const els = {
     risultatiStato: document.querySelector('#results-status'),
     preferiti: document.querySelector('#favorites-row'),
     preferitiVuoto: document.querySelector('#favorites-empty'),
+    contatorePreferiti: document.querySelector('#favorites-count'),
+    toast: document.querySelector('#app-toast'),
+    toastTesto: document.querySelector('#app-toast-text'),
     filtriPreferiti: document.querySelector('#favorites-filters'),
     appuntamenti: document.querySelector('#upcoming-list'),
     modale: document.querySelector('#team-modal'),
     modaleTitolo: document.querySelector('#team-modal-title'),
     modaleCorpo: document.querySelector('#team-modal-body'),
+    tornaSu: document.querySelector('.back-to-top'),
 };
 // stato
 const stato = {
     risultati: [],
     filtroPreferiti: 'Tutti',
     idAperta: null,
+    datiModale: null,
+    eventoAperto: null,
+    squadraEvento: null,
     controllerRicerca: null,
     cacheProssimi: new Map(),
     richiestaAppuntamenti: 0,
@@ -50,6 +57,8 @@ function idsPreferiti() {
 function renderPreferiti() {
     const preferiti = getPreferiti();
     els.preferitiVuoto.hidden = preferiti.length > 0;
+
+    els.contatorePreferiti.textContent = preferiti.length ? `(${preferiti.length})` : '';
 
     // I filtri si vedono solo se c'è almeno una preferita
     els.filtriPreferiti.hidden = preferiti.length === 0;
@@ -128,9 +137,16 @@ function togglePreferito(id) {
     if (isPreferita(id)) {
         rimuoviPreferito(id);
         stato.cacheProssimi.delete(id);
+        mostraToast(`${squadra.nome} rimossa dai preferiti`);
     } else {
         aggiungiPreferito(squadra);
+        mostraToast(`${squadra.nome} aggiunta ai preferiti ⭐`);
     }
+
+    els.input.value = '';
+    ricercaConDebounce.cancel();
+    stato.controllerRicerca?.abort();
+    svuotaRisultati();
 
     renderPreferiti();
     renderRisultati(); // aggiorna la stella (piena/vuota) nei risultati
@@ -185,6 +201,9 @@ async function apriModaleSquadra(squadra) {
     const modale = bootstrap.Modal.getOrCreateInstance(els.modale);
     stato.idAperta = squadra.id;
 
+    stato.datiModale = null;
+    stato.eventoAperto = null;
+
     els.modaleTitolo.textContent = squadra.nome;
     mostra(els.modaleCorpo, ui.modaleSquadraLoading(squadra));
     modale.show();
@@ -193,12 +212,96 @@ async function apriModaleSquadra(squadra) {
         const [prossimi, ultimi] = await Promise.all([prossimiEventi(squadra.id), ultimiRisultati(squadra.id)]);
         if (stato.idAperta !== squadra.id) return; // nel frattempo è stata aperta un'altra squadra
 
+        stato.datiModale = { squadra, prossimi, ultimi };
+
         mostra(els.modaleCorpo, ui.modaleSquadra(squadra, prossimi, ultimi));
     } catch (err) {
         console.error(err);
         if (stato.idAperta !== squadra.id) return;
         mostra(els.modaleCorpo, ui.modaleSquadraErrore(squadra, err.message || 'Impossibile caricare i dettagli.'));
     }
+}
+
+/* mostra i dettagli di una partita al posto di quelli della squadra. */
+async function apriDettaglioEvento(idEvento, base = null) {
+    stato.eventoAperto = idEvento;
+
+    els.modaleTitolo.textContent = base?.nome ?? 'Dettagli partita';
+    mostra(els.modaleCorpo, ui.modaleEventoLoading());
+
+    try {
+        const evento = (await dettaglioEvento(idEvento)) ?? base;
+        if (stato.eventoAperto !== idEvento) return; // nel frattempo l'utente è tornato indietro
+        if (!evento) throw new Error('Partita non trovata.');
+
+        els.modaleTitolo.textContent = evento.nome;
+        mostra(els.modaleCorpo, ui.modaleEvento(evento));
+    } catch (err) {
+        console.error(err);
+        if (stato.eventoAperto !== idEvento) return;
+        // se ho già i dati base della partita li mostro comunque
+        if (base) {
+            mostra(els.modaleCorpo, ui.modaleEvento(base));
+        } else {
+            mostra(els.modaleCorpo, ui.modaleEventoErrore(err.message || 'Impossibile caricare la partita.'));
+        }
+    }
+}
+
+/* bottone "Torna alla squadra": rimostra i dati già caricati, senza nuove richieste. */
+function tornaAllaSquadra() {
+    // partita aperta dalla modale della squadra: rimostro i dati già caricati, senza nuove richieste
+    if (stato.datiModale) {
+        const { squadra, prossimi, ultimi } = stato.datiModale;
+        stato.eventoAperto = null;
+        els.modaleTitolo.textContent = squadra.nome;
+        mostra(els.modaleCorpo, ui.modaleSquadra(squadra, prossimi, ultimi));
+        return;
+    }
+    // partita aperta dai prossimi appuntamenti: apro la modale della sua squadra
+    if (stato.squadraEvento) apriModaleSquadra(stato.squadraEvento);
+}
+
+/* click dentro la modale: una partita apre i suoi dettagli, "Torna" riporta alla squadra. */
+function gestisciClickModale(event) {
+    if (event.target.closest('[data-action="torna"]')) {
+        tornaAllaSquadra();
+        return;
+    }
+    const partita = event.target.closest('.event-item');
+    if (!partita || !stato.datiModale) return;
+
+    const { prossimi, ultimi } = stato.datiModale;
+    const base = [...prossimi, ...ultimi].find((e) => e.id === partita.dataset.eventId);
+    apriDettaglioEvento(partita.dataset.eventId, base);
+}
+
+function gestisciClickAppuntamenti(event) {
+    const partita = event.target.closest('.event-item');
+    if (!partita) return;
+
+    const idEvento = partita.dataset.eventId;
+    const idSquadra = partita.dataset.teamId;
+    const base = (stato.cacheProssimi.get(idSquadra) ?? []).find((e) => e.id === idEvento);
+
+    // nella modale non c'è nessuna squadra caricata: "Torna alla squadra" aprirà questa
+    stato.idAperta = null;
+    stato.datiModale = null;
+    stato.squadraEvento = getPreferiti().find((s) => s.id === idSquadra) ?? null;
+
+    bootstrap.Modal.getOrCreateInstance(els.modale).show();
+    apriDettaglioEvento(idEvento, base);
+}
+
+function mostraToast(testo) {
+    els.toastTesto.textContent = testo;
+    bootstrap.Toast.getOrCreateInstance(els.toast, { delay: 2500 }).show();
+}
+
+//bottone torna su
+
+function aggiornaTornaSu() {
+    els.tornaSu.classList.toggle('nascosto', window.scrollY < 100);
 }
 
 //tema chiaro/scuro
@@ -234,7 +337,7 @@ function gestisciClickCard(event) {
 /** Tastiera: Invio/Spazio su una card si comportano come un click. */
 function gestisciTastiera(event) {
     if (event.key !== 'Enter' && event.key !== ' ') return;
-    if (!event.target.matches('.team-card')) return;
+    if (!event.target.matches('.team-card, .event-item')) return;
     event.preventDefault();
     event.target.click();
 }
@@ -266,7 +369,12 @@ function init() {
     // Filtri dei preferiti
     els.filtriPreferiti.addEventListener('click', gestisciClickFiltro);
 
+    els.appuntamenti.addEventListener('click', gestisciClickAppuntamenti);
+
     document.addEventListener('keydown', gestisciTastiera);
+
+    aggiornaTornaSu();
+    window.addEventListener('scroll', aggiornaTornaSu);
 
     els.btnTema.addEventListener('click', () => {
         const nuovo = els.html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';

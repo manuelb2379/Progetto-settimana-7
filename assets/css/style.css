@@ -1,4 +1,4 @@
-/* ===== Variabili ===== */
+/* Variabili */
 :root {
   --sh-navy: #1b3366;
   --sh-accent: #1b3366;
@@ -11,7 +11,18 @@
   --sh-bg: #12151c;
 }
 
-/* ===== Base (mobile first) ===== */
+@keyframes immagine-entra {
+  from {
+    background-position: center, -30px 0;
+  }
+
+  to {
+    background-position: center, 0 0;
+  }
+}
+
+
+/* base (mobile first) */
 body {
   background-color: var(--sh-bg);
 }
@@ -21,20 +32,34 @@ body {
 }
 
 .hero {
+  height: 250px;
+  animation: immagine-entra 3s ease-out;
   background-color: var(
     --sh-navy
   ); /* colore di riserva se l'immagine non si carica */
-  /* velo blu semitrasparente sopra la foto, così il testo bianco resta leggibile */
   background-image:
     linear-gradient(rgba(79, 100, 138, 0.85), rgba(79, 100, 138, 0.85)),
     url("../img/header-sport.jpg");
-  background-size: 100% 100%;
+  background-size: 100% 100%, calc(100% + 30px) 100%;
   background-repeat: no-repeat;
-  background-position: center;
+  background-position: center, 0 0;
 }
 
 .hero-form {
   max-width: 540px;
+}
+
+/* modifiche tema chiaro/scuro */
+[data-bs-theme="dark"] #theme-toggle:hover {
+  background-color: var(--sh-bg);
+  border-color: #f8f9fa;
+  color: #fff;
+}
+
+[data-bs-theme="dark"] .hero-form .btn {
+  background-color: #212529;
+  border-color: var(--sh-bg);
+  color: #fff !important;
 }
 
 /* Contenitore con larghezza massima */
@@ -47,7 +72,7 @@ body {
   font-weight: 700;
 }
 
-/* ===== Card squadra ===== */
+/* Card squadr */
 .team-card {
   border: 0;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
@@ -105,6 +130,19 @@ body {
   outline: none;
 }
 
+.event-item {
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: background-color 0.15s ease;
+}
+
+.event-item:hover,
+.event-item:focus {
+  background-color: var(--bs-tertiary-bg);
+  outline: none;
+}
+
+/* footer*/
 .site-footer {
   background-color: var(--sh-navy);
 }
@@ -123,11 +161,18 @@ body {
   background-color: #3d5fa8;
 }
 
+/* bottone torna su */
+
 .back-to-top {
   width: 48px;
   height: 48px;
   font-size: 1.25rem;
   z-index: 1030; /* sopra le card */
+}
+
+.back-to-top.nascosto {
+  opacity: 0;
+  visibility: hidden; /* invisibile e non cliccabile */
 }
 
 /* media query: 768px */
@@ -136,6 +181,14 @@ body {
     flex: 0 0 100%;
     width: 100%;
   }
+  .hero {
+    height: 300px;
+  }
 }
 
 /* media query: 1200 px */
+@media (min-width: 1200px) {
+  .hero {
+    height: 350px;
+  }
+}

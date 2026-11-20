@@ -21,8 +21,8 @@ Legenda: ✅ fatto · ❌ non fatto
 **Dettagli squadra**
 - ✅ Click su una card: carica in parallelo con `Promise.all` prossimi eventi (`eventsnext.php`)
   e ultimi risultati (`eventslast.php`)
-- ✅ Due liste "Prossimi eventi" e "Ultimi risultati" (mostrate in una modale insieme a logo,
-  campionato, paese, stadio, anno di fondazione e descrizione)
+- ✅ Due liste "Prossimi eventi" e "Ultimi risultati", mostrate in una modale insieme a logo,
+  campionato, paese, stadio, anno di fondazione e descrizione
 - ✅ Ogni evento mostra data, casa vs trasferta ed eventuale punteggio
 
 **Classi**
@@ -54,17 +54,29 @@ Legenda: ✅ fatto · ❌ non fatto
   (una squadra che fallisce non blocca le altre), con i prossimi appuntamenti ordinati per data
 - ✅ Filtro per sport: bottoni Tutti / Calcio / Basket / Football sul campo `strSport`
   (applicato alle card dei preferiti)
-- ❌ Modale dettagli evento: le partite non sono cliccabili; ✅ al suo posto c'è la modale con i
-  dettagli della squadra, che contiene anche prossimi eventi e ultimi risultati
+- ✅ Modale dettagli evento: cliccando una partita (dalla modale della squadra o dai prossimi
+  appuntamenti) si vedono tutti i dati della partita, con il bottone "← Torna alla squadra"
 - ✅ Moduli ES: codice diviso in `api.js`, `elementi.js` (al posto di `ui.js`), `main.js` e altri
   moduli, con un solo `<script type="module">` nell'HTML
 
-### Aggiunte personali (non richieste dalle slide o dal responsabile)
+### Aggiunte personali (non richieste dalle slide)
 
-- ✅ Header sticky con immagine di sfondo a tema sport
-- ✅ Bottone "torna su" fisso in basso a destra
+**Header**
+- ✅ Header sticky (resta in alto mentre si scorre)
+- ✅ Altezza responsive: 250px su mobile, 300px da 768px, 350px da 1200px
+- ✅ Immagine di sfondo a tema sport, con velo blu semitrasparente e animazione di entrata da sinistra
+- ✅ Tema chiaro / scuro salvato in `localStorage`; in modalità scura anche i bottoni dell'header diventano scuri
+
+**Ricerca e preferiti**
+- ✅ Risultati mostrati subito sotto la barra di ricerca
+- ✅ Dopo "Aggiungi ai preferiti" la barra di ricerca e i risultati si svuotano
+- ✅ Contatore accanto al titolo dei preferiti, es. "(3)"
+- ✅ Toast di conferma quando una squadra viene aggiunta o rimossa
+- ✅ Card cliccabili anche da tastiera (Invio / Spazio)
+
+**Altro**
+- ✅ Bottone "torna su" in basso a destra, visibile solo dopo aver scorso la pagina
 - ✅ Footer con link ai social (Instagram, Facebook, X) con icone di Bootstrap Icons
-- ✅ Tema chiaro / scuro salvato in `localStorage`
 
 ## Struttura del progetto
 
@@ -89,22 +101,24 @@ Legenda: ✅ fatto · ❌ non fatto
 > **`main.js`**. In più sono stati aggiunti `storage.js`, `strumenti.js` e la cartella `models/`.
 
 - **main.js**: prende gli elementi del DOM con `querySelector`, tiene lo stato dell'app e collega
-  gli event listener (ricerca, click sulle card con event delegation, filtri, tema) e apre la modale.
-- **api.js**: funzioni `async/await` per cercare squadre, prossimi eventi e ultimi risultati.
-  Gli indirizzi sono costruiti con `new URL()` e `searchParams.set()`.
+  gli event listener (ricerca, card con event delegation, filtri, modale, prossimi appuntamenti,
+  tema, scroll). Gestisce la modale della squadra e quella della partita, il toast e il bottone "torna su".
+- **api.js**: funzioni `async/await` per cercare squadre, prossimi eventi, ultimi risultati e
+  dettaglio partita. Gli indirizzi sono costruiti con `new URL()` e `searchParams.set()`.
   Gestisce gli errori (es. limite di 30 richieste al minuto) con `throw`.
 - **storage.js**: legge, aggiunge e rimuove i preferiti e salva il tema in `localStorage`.
 - **elementi.js**: funzioni che ricevono dati e restituiscono elementi HTML (card, spinner, errori,
-  filtri, liste eventi, contenuto della modale).
+  filtri, liste eventi, contenuto della modale della squadra e della partita).
 - **strumenti.js**: `debounce` e `creaElemento`.
 - **models/Squadra.js**: classe con costruttore che trasforma i dati dell'API in proprietà leggibili
   (nome, campionato, paese, logo, sport, stadio, anno di fondazione, descrizione).
 - **models/Evento.js**: classe per le partite con i metodi `formattaData()`, `formattaOra()`
-  (con `Intl.DateTimeFormat`, convertendo da UTC all'ora locale) e `punteggio()`.
+  (con `Intl.DateTimeFormat`, convertendo da UTC all'ora locale), `punteggio()` ed `esitoPer()`
+  (vittoria / pareggio / sconfitta, per il colore del punteggio).
 
 ## Librerie esterne
 
-- [Bootstrap 5.3](https://getbootstrap.com/) per layout, componenti e modale
+- [Bootstrap 5.3](https://getbootstrap.com/) per layout, componenti, modale e toast
 - [Bootstrap Icons](https://icons.getbootstrap.com/) per le icone del footer e del bottone "torna su"
 
 ## API utilizzata
@@ -116,10 +130,28 @@ Legenda: ✅ fatto · ❌ non fatto
 | `searchteams.php?t={nome}` | squadre trovate |
 | `eventsnext.php?id={idTeam}` | prossimi eventi |
 | `eventslast.php?id={idTeam}` | ultimi risultati |
+| `lookupevent.php?id={idEvent}` | dettaglio di una partita |
 
 Limiti della versione gratuita: 1 risultato per ricerca, solo partite in casa per prossimi eventi
 e ultimi risultati, massimo 30 richieste al minuto. Se si supera il limite le richieste vengono
 bloccate per qualche minuto.
+
+## Cronologia delle versioni
+
+- **v1.1** – Base del progetto: pagina, modelli e fetch dati
+- **v1.2** – Card con `createElement`, ricerca con debounce e modale; aggiunti `storage.js`,
+  `elementi.js` e `script.js` completo; `script.js` rinominato in `main.js`
+- **v2.1** – Adeguamento alle specifiche: `URL`/`searchParams`, `Intl.DateTimeFormat`;
+  metodi `formattaData`, `formattaOra` e `punteggio` in `Evento`
+- **v2.2** – Rimozione degli elementi non più utili e piccole sostituzioni
+- **v3.1** – Modale dettagli squadra, nuove card, footer e header sticky; risultati sotto la barra
+  di ricerca; card cliccabile che apre la modale con descrizione, prossimi eventi e ultimi risultati;
+  bottone "Aggiungi ai preferiti" e "Dettagli/Rimuovi" nei preferiti; filtro per sport solo sui
+  preferiti; footer con icone social; header sticky con immagine di sfondo; bottone torna su
+- **v4.1** – Partite cliccabili (dalla modale della squadra e dai prossimi appuntamenti) con
+  modale dettagli partita; contatore e toast nei preferiti; barra di ricerca che si svuota dopo
+  l'aggiunta; bottone torna su visibile solo dopo lo scroll; header con altezza responsive e
+  leggero movimento dell'immagine; bottoni scuri in modalità scura
 
 ## Come avviarlo
 

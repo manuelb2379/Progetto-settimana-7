@@ -20,7 +20,7 @@
 <body>
 
     <!-- barra di ricerca -->
-    <header class="hero sticky-top text-center text-white py-5 px-3">
+    <header class="hero sticky-top d-flex flex-column justify-content-center text-center text-white px-3">
         <button type="button" id="theme-toggle" class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-3"
             aria-label="Attiva tema scuro">🌙</button>
 
@@ -45,7 +45,9 @@
 
         <!-- Preferiti -->
         <section id="favorites-section" class="mb-5" aria-labelledby="favorites-title">
-            <h2 id="favorites-title" class="section-title h4 mb-3">⭐ Le tue squadre preferite</h2>
+            <h2 id="favorites-title" class="section-title h4 mb-3">
+                ⭐ Le tue squadre preferite <span id="favorites-count" class="text-body-secondary"></span>
+            </h2>
             <div id="favorites-filters" class="d-flex flex-wrap gap-2 mb-3" hidden></div>
             <p id="favorites-empty" class="text-body-secondary fst-italic">
                 Non hai ancora squadre preferite: cercane una e aggiungila!
@@ -86,8 +88,20 @@
 
     <!-- bottone torna su -->
     <a href="#"
-        class="back-to-top btn btn-primary rounded-circle shadow position-fixed bottom-0 end-0 m-4 d-inline-flex align-items-center justify-content-center"
+        class="back-to-top nascosto btn btn-primary rounded-circle shadow position-fixed bottom-0 end-0 m-4 d-inline-flex align-items-center justify-content-center"
         aria-label="Torna all'inizio della pagina"><i class="bi bi-arrow-up" aria-hidden="true"></i></a>
+
+    <!-- toast per aggiunta o eliminazione squadra -->
+    <div class="toast-container position-fixed bottom-0 start-0 p-3">
+        <div id="app-toast" class="toast align-items-center text-bg-dark border-0" role="status" aria-live="polite"
+            aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="app-toast-text"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Chiudi"></button>
+            </div>
+        </div>
+    </div>
 
     <!-- modale dettagli squadra -->
     <div class="modal fade" id="team-modal" tabindex="-1" aria-labelledby="team-modal-title" aria-hidden="true">
