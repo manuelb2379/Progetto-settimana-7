@@ -30,9 +30,9 @@ export class Evento {
         return this.golCasa !== null && this.golTrasferta !== null;
     }
 
-    /**
-     * Data e ora dell'API sono in UTC: le unisco in un unico oggetto Date.
-     * La "Z" finale dice a JS che l'orario è UTC, così poi viene convertito nell'ora locale.
+    /*
+     Data e ora dell'API sono in UTC: le unisco in un unico oggetto Date.
+     La "Z" finale dice a JS che l'orario è UTC, così poi viene convertito nell'ora locale.
      */
     get dataOra() {
         if (!this.data) return null;
@@ -44,14 +44,14 @@ export class Evento {
         return formatDate(this.data);
     }
 
-    /** Ora locale dell'utente (es. "21:00"), vuota se non disponibile. */
+    /* Ora locale dell'utente (es. "21:00"), vuota se non disponibile. */
     get oraFormattata() {
         const d = this.dataOra;
         if (!d || Number.isNaN(d.getTime()) || !this.ora) return '';
         return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
     }
 
-    /** "V" vittoria, "P" pareggio, "S" sconfitta dal punto di vista della squadra indicata. */
+    /* "V" vittoria, "P" pareggio, "S" sconfitta dal punto di vista della squadra indicata. */
     esitoPer(idSquadra) {
         if (!this.haRisultato) return null;
         if (this.golCasa === this.golTrasferta) return 'P';

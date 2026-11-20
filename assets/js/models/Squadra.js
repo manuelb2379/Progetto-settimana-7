@@ -10,7 +10,7 @@ export class Squadra {
         this.fondazione = fondazione;
     }
 
-    /** Crea una Squadra partendo da un oggetto "team" di TheSportsDB. */
+    /* Crea una Squadra partendo da un oggetto "team" di TheSportsDB. */
     static fromApi(team) {
         return new Squadra({
             id: team.idTeam,
