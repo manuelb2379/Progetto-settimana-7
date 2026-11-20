@@ -13,14 +13,17 @@
 
 @keyframes immagine-entra {
   from {
-    background-position: center, -30px 0;
+    background-position:
+      center,
+      -30px 0;
   }
 
   to {
-    background-position: center, 0 0;
+    background-position:
+      center,
+      0 0;
   }
 }
-
 
 /* base (mobile first) */
 body {
@@ -40,13 +43,18 @@ body {
   background-image:
     linear-gradient(rgba(79, 100, 138, 0.85), rgba(79, 100, 138, 0.85)),
     url("../img/header-sport.jpg");
-  background-size: 100% 100%, calc(100% + 30px) 100%;
+  background-size:
+    100% 100%,
+    calc(100% + 30px) 100%;
   background-repeat: no-repeat;
-  background-position: center, 0 0;
+  background-position:
+    center,
+    0 0;
 }
 
 .hero-form {
-  max-width: 540px;
+  width: 100%;
+  max-width: 768px;
 }
 
 /* modifiche tema chiaro/scuro */

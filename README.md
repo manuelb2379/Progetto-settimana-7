@@ -69,7 +69,7 @@ Legenda: ✅ fatto · ❌ non fatto
 
 **Ricerca e preferiti**
 - ✅ Risultati mostrati subito sotto la barra di ricerca
-- ✅ Dopo "Aggiungi ai preferiti" la barra di ricerca e i risultati si svuotano
+- ✅ Dopo aver aggiunto o rimosso una squadra dai preferiti, la barra di ricerca e i risultati si svuotano
 - ✅ Contatore accanto al titolo dei preferiti, es. "(3)"
 - ✅ Toast di conferma quando una squadra viene aggiunta o rimossa
 - ✅ Card cliccabili anche da tastiera (Invio / Spazio)

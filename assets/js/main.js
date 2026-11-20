@@ -269,10 +269,11 @@ function gestisciClickModale(event) {
         return;
     }
     const partita = event.target.closest('.event-item');
-    if (!partita || !stato.datiModale) return;
+    if (!partita) return;
 
-    const { prossimi, ultimi } = stato.datiModale;
-    const base = [...prossimi, ...ultimi].find((e) => e.id === partita.dataset.eventId);
+    // se ho già i dati della squadra uso quelli della partita, altrimenti la carico dall'API
+    const eventi = stato.datiModale ? [...stato.datiModale.prossimi, ...stato.datiModale.ultimi] : [];
+    const base = eventi.find((e) => e.id === partita.dataset.eventId);
     apriDettaglioEvento(partita.dataset.eventId, base);
 }
 
@@ -368,6 +369,8 @@ function init() {
 
     // Filtri dei preferiti
     els.filtriPreferiti.addEventListener('click', gestisciClickFiltro);
+
+    els.modaleCorpo.addEventListener('click', gestisciClickModale);
 
     els.appuntamenti.addEventListener('click', gestisciClickAppuntamenti);
 
