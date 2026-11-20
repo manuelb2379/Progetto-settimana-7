@@ -1,4 +1,5 @@
-import { formatDate } from '../strumenti.js';
+const FORMATO_DATA = new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const FORMATO_ORA = new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit' });
 
 function toNumberOrNull(value) {
     return value === null || value === undefined || value === '' ? null : Number(value);
@@ -31,8 +32,8 @@ export class Evento {
     }
 
     /*
-     Data e ora dell'API sono in UTC: le unisco in un unico oggetto Date.
-     La "Z" finale dice a JS che l'orario è UTC, così poi viene convertito nell'ora locale.
+     * Data e ora dell'API sono in UTC: le unisco in un unico oggetto Date.
+     * La "Z" finale dice a JS che l'orario è UTC, così poi viene convertito nell'ora locale.
      */
     get dataOra() {
         if (!this.data) return null;
@@ -40,16 +41,26 @@ export class Evento {
         return new Date(`${this.data}T${ora}Z`);
     }
 
-    get dataFormattata() {
-        return formatDate(this.data);
+    /** Data nel formato italiano, es. "17/05/2026" (vuota se manca). */
+    formattaData() {
+        const d = this.dataOra;
+        if (!d || Number.isNaN(d.getTime())) return '';
+        return FORMATO_DATA.format(d);
     }
 
-    /* Ora locale dell'utente (es. "21:00"), vuota se non disponibile. */
-    get oraFormattata() {
+    /** Ora locale dell'utente, es. "21:00" (vuota se manca). */
+    formattaOra() {
         const d = this.dataOra;
         if (!d || Number.isNaN(d.getTime()) || !this.ora) return '';
-        return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        return FORMATO_ORA.format(d);
     }
+
+    /** Punteggio pronto da mostrare, es. "3 – 1" (vuoto se la partita non è ancora giocata). */
+    punteggio() {
+        if (!this.haRisultato) return '';
+        return `${this.golCasa} – ${this.golTrasferta}`;
+    }
+
 
     /* "V" vittoria, "P" pareggio, "S" sconfitta dal punto di vista della squadra indicata. */
     esitoPer(idSquadra) {

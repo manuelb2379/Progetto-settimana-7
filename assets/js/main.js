@@ -1,7 +1,7 @@
 import { cercaSquadre, prossimiEventi, ultimiRisultati, dettaglioEvento } from './api.js';
 import { getPreferiti, isPreferita, aggiungiPreferito, rimuoviPreferito, leggiTema, salvaTema } from './storage.js';
 import * as ui from './elementi.js';
-import { debounce, valoriUnici } from './strumenti.js';
+import { debounce } from './strumenti.js';
 
 const MIN_CARATTERI = 3;
 const DEBOUNCE_MS = 400;
@@ -28,7 +28,7 @@ const els = {
 // stato
 const stato = {
     risultati: [],
-    filtri: { preferiti: 'Tutte', risultati: 'Tutte' },
+   filtri: { preferiti: 'Tutti', risultati: 'Tutti' },
     idSelezionata: null,
     controllerRicerca: null,
     cacheProssimi: new Map(),
@@ -45,7 +45,7 @@ function mostra(contenitore, ...elementi) {
     contenitore.append(...elementi);
 }
 
-const filtraPerLega = (lista, filtro) => (filtro === 'Tutte' ? lista : lista.filter((s) => s.lega === filtro));
+const filtraPerSport = (lista, sport) => (sport === 'Tutti' ? lista : lista.filter((s) => s.sport === sport));
 
 function opzioniGriglia() {
     return {
@@ -56,15 +56,18 @@ function opzioniGriglia() {
 
 /* disegna una griglia di card con la sua barra di filtri (per lega). */
 function renderGriglia({ lista, scope, contenitore, contenitoreFiltri }) {
-    const leghe = valoriUnici(lista.map((s) => s.lega));
-    if (!leghe.includes(stato.filtri[scope])) stato.filtri[scope] = 'Tutte';
+    const sport = stato.filtri[scope];
 
-    // I filtri hanno senso solo se ci sono almeno 2 leghe diverse
-    contenitoreFiltri.hidden = leghe.length < 2;
-    contenitoreFiltri.textContent = '';
-    if (leghe.length >= 2) contenitoreFiltri.append(...ui.filtri(leghe, stato.filtri[scope], scope));
+    // I filtri si vedono solo se c'è almeno una card
+    contenitoreFiltri.hidden = lista.length === 0;
+    mostra(contenitoreFiltri, ...ui.filtri(sport, scope));
 
-    mostra(contenitore, ...ui.cardsSquadre(filtraPerLega(lista, stato.filtri[scope]), opzioniGriglia()));
+    const filtrate = filtraPerSport(lista, sport);
+    if (lista.length && !filtrate.length) {
+        mostra(contenitore, ui.nessunaPerSport());
+    } else {
+        mostra(contenitore, ...ui.cardsSquadre(filtrate, opzioniGriglia()));
+    }
 }
 
 function renderPreferiti() {
@@ -121,7 +124,7 @@ async function eseguiRicerca(testo) {
     try {
         const squadre = await cercaSquadre(query, controller.signal);
         stato.risultati = squadre;
-        stato.filtri.risultati = 'Tutte';
+         stato.filtri.risultati = 'Tutti';
         if (squadre.length) {
             els.risultatiStato.textContent = '';
         } else {

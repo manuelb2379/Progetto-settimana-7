@@ -17,15 +17,3 @@ export function creaElemento(tag, classi = '', testo = '') {
     if (testo !== '') elemento.textContent = testo;
     return elemento;
 }
-
-/* "2026-05-17" → "17/05/2026" */
-export function formatDate(isoDate) {
-    if (!isoDate) return '';
-    const [y, m, d] = isoDate.split('-');
-    return `${d}/${m}/${y}`;
-}
-
-/* Valori unici ordinati */
-export function valoriUnici(lista) {
-    return [...new Set(lista.filter(Boolean))].sort((a, b) => a.localeCompare(b));
-}

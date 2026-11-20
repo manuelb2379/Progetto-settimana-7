@@ -1,8 +1,12 @@
 import { Squadra } from './models/Squadra.js';
 import { Evento } from './models/Evento.js';
 
-const URL = 'https://www.thesportsdb.com/api/v1/json/123';
+const API_URL = 'https://www.thesportsdb.com/api/v1/json/123';
 
+/**
+ * Riceve l'indirizzo (un oggetto URL), fa la fetch e i controlli comuni. Accetta un AbortSignal per annullare la richiesta.
+ * Gli errori vengono lanciati e gestiti con try/catch da chi chiama.
+ */
 async function fetchJSON(indirizzo, { signal } = {}) {
     const response = await fetch(indirizzo, { signal });
 
@@ -20,13 +24,19 @@ async function fetchJSON(indirizzo, { signal } = {}) {
 
 /** Cerca squadre per nome. Restituisce sempre un array (vuoto se nessuna). */
 export async function cercaSquadre(nome, signal) {
-   const data = await fetchJSON(`${URL}/searchteams.php?t=${nome}`, { signal });
+    const indirizzo = new URL(`${API_URL}/searchteams.php`);
+    indirizzo.searchParams.set('t', nome);
+
+    const data = await fetchJSON(indirizzo, { signal });
     return (data.teams ?? []).map((team) => Squadra.fromApi(team));
 }
 
 /** Prossimi eventi della squadra, dal più vicino. */
 export async function prossimiEventi(idSquadra, signal) {
-   const data = await fetchJSON(`${URL}/eventsnext.php?id=${idSquadra}`, { signal });
+    const indirizzo = new URL(`${API_URL}/eventsnext.php`);
+    indirizzo.searchParams.set('id', idSquadra);
+
+    const data = await fetchJSON(indirizzo, { signal });
     return (data.events ?? [])
         .map((e) => new Evento(e))
         .sort((a, b) => (a.dataOra ?? 0) - (b.dataOra ?? 0));
@@ -34,7 +44,10 @@ export async function prossimiEventi(idSquadra, signal) {
 
 /** Ultimi risultati della squadra, dal più recente. */
 export async function ultimiRisultati(idSquadra, signal) {
-   const data = await fetchJSON(`${URL}/eventslast.php?id=${idSquadra}`, { signal });
+    const indirizzo = new URL(`${API_URL}/eventslast.php`);
+    indirizzo.searchParams.set('id', idSquadra);
+
+    const data = await fetchJSON(indirizzo, { signal });
     return (data.results ?? [])
         .map((e) => new Evento(e))
         .sort((a, b) => (b.dataOra ?? 0) - (a.dataOra ?? 0));
@@ -42,7 +55,10 @@ export async function ultimiRisultati(idSquadra, signal) {
 
 /** Dettaglio completo di un evento (null se non trovato). */
 export async function dettaglioEvento(idEvento, signal) {
-   const data = await fetchJSON(`${URL}/lookupevent.php?id=${idEvento}`, { signal });
+    const indirizzo = new URL(`${API_URL}/lookupevent.php`);
+    indirizzo.searchParams.set('id', idEvento);
+
+    const data = await fetchJSON(indirizzo, { signal });
     const evento = data.events?.[0];
     return evento ? new Evento(evento) : null;
 }

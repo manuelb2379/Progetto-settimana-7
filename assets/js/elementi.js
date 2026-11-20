@@ -44,12 +44,19 @@ export function nessunaSquadra() {
 
 // bottoni filtri
 
-export function filtri(valori, attivo, scope) {
-    return ['Tutte', ...valori].map((valore) => {
+const SPORT = [
+    { etichetta: 'Tutti', valore: 'Tutti' },
+    { etichetta: 'Calcio', valore: 'Soccer' },
+    { etichetta: 'Basket', valore: 'Basketball' },
+    { etichetta: 'Football', valore: 'American Football' },
+];
+
+export function filtri(attivo, scope) {
+    return SPORT.map(({ etichetta, valore }) => {
         const isAttivo = valore === attivo;
         const classeColore = isAttivo ? 'btn-primary' : 'btn-outline-primary';
 
-        const btn = creaElemento('button', `btn btn-sm rounded-pill ${classeColore}`, valore);
+        const btn = creaElemento('button', `btn btn-sm rounded-pill ${classeColore}`, etichetta);
         btn.type = 'button';
         btn.dataset.filtro = valore;
         btn.dataset.scope = scope;
@@ -58,6 +65,11 @@ export function filtri(valori, attivo, scope) {
     });
 }
 
+export function nessunaPerSport() {
+    const col = creaElemento('div', 'col-12');
+    col.append(messaggio('Nessuna squadra per questo sport.'));
+    return col;
+}
 // card squadra 
 
 function stemma(squadra) {
@@ -128,7 +140,7 @@ function rigaEvento(evento, { idSquadra = null, etichetta = '' } = {}) {
     li.setAttribute('aria-label', `Dettagli di ${evento.nome}`);
 
     // riga piccola: (squadra ·) data · ora
-    const quando = [evento.dataFormattata, evento.oraFormattata].filter(Boolean).join(' · ');
+    const quando = [evento.formattaData(), evento.formattaOra()].filter(Boolean).join(' · ');
     const info = creaElemento('small', 'd-block text-body-secondary');
     if (etichetta) info.append(creaElemento('strong', '', etichetta), ' · ');
     info.append(quando);
@@ -230,7 +242,7 @@ export function modaleEvento(evento) {
     }
 
     // casa, punteggio, trasferta
-    const punteggio = evento.haRisultato ? `${evento.golCasa} – ${evento.golTrasferta}` : 'vs';
+    const punteggio = evento.haRisultato ? evento.punteggio() : 'vs';
     const sfida = creaElemento('div', 'd-flex justify-content-center align-items-center gap-3 text-center mb-4');
     sfida.append(
         creaElemento('span', 'fw-bold flex-fill', evento.casa),
@@ -243,8 +255,8 @@ export function modaleEvento(evento) {
         ['Competizione', evento.lega],
         ['Stagione', evento.stagione],
         ['Giornata', evento.giornata],
-        ['Data', evento.dataFormattata],
-        ['Ora', evento.oraFormattata],
+        ['Data', evento.formattaData()],
+        ['Ora', evento.formattaOra()],
         ['Stadio', evento.stadio],
         ['Città', [evento.citta, evento.paese].filter(Boolean).join(', ')],
         ['Stato', evento.stato],
