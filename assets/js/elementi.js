@@ -1,5 +1,7 @@
 import { creaElemento } from './strumenti.js';
 
+// stati generici
+
 export function spinner(testo = 'Caricamento...') {
     const box = creaElemento('div', 'd-flex align-items-center justify-content-center gap-2 py-4 text-body-secondary');
     box.setAttribute('role', 'status');
@@ -42,8 +44,9 @@ export function nessunaSquadra() {
     return card;
 }
 
-// bottoni filtri
+// filtri per sport
 
+// etichetta = testo del pulsante, valore = campo strSport dell'API
 const SPORT = [
     { etichetta: 'Tutti', valore: 'Tutti' },
     { etichetta: 'Calcio', valore: 'Soccer' },
@@ -65,13 +68,14 @@ export function filtri(attivo, scope) {
     });
 }
 
+/* messaggio quando il filtro non lascia nessuna card (occupa tutta la riga). */
 export function nessunaPerSport() {
     const col = creaElemento('div', 'col-12');
     col.append(messaggio('Nessuna squadra per questo sport.'));
     return col;
 }
 
-// card squadra 
+// card squadra
 
 function stemma(squadra) {
     const img = creaElemento('img', 'team-badge mb-3');
@@ -81,28 +85,44 @@ function stemma(squadra) {
     return img;
 }
 
-function bottonePreferito(squadra, preferita) {
-    const btn = creaElemento('button', 'btn btn-sm w-100 mt-auto');
+/* bottone dei risultati per aggiungere la squadra ai preferiti */
+function bottoneAggiungi(squadra) {
+    const btn = creaElemento('button', 'btn btn-sm btn-outline-primary fw-semibold w-100', '☆ Aggiungi ai preferiti');
     btn.type = 'button';
     btn.dataset.action = 'toggle-fav';
-
-    if (preferita) {
-        btn.classList.add('btn-remove');
-        btn.textContent = '🗑 Rimuovi';
-        btn.setAttribute('aria-label', `Rimuovi ${squadra.nome} dai preferiti`);
-    } else {
-        btn.classList.add('btn-outline-primary', 'fw-semibold');
-        btn.textContent = '☆ Aggiungi ai preferiti';
-        btn.setAttribute('aria-label', `Aggiungi ${squadra.nome} ai preferiti`);
-    }
+    btn.setAttribute('aria-label', `Aggiungi ${squadra.nome} ai preferiti`);
     return btn;
 }
 
-export function cardSquadra(squadra, { preferita = false, selezionata = false } = {}) {
+/* testo al posto del bottone quando la squadra è già tra i preferiti. */
+function avvisoGiaPreferita() {
+    return creaElemento('p', 'small fw-semibold text-success mb-0', '★ Squadra già inserita nei preferiti');
+}
+
+function bottoneDettagli(squadra) {
+    const btn = creaElemento('button', 'btn btn-sm btn-primary flex-fill', 'Dettagli');
+    btn.type = 'button';
+    btn.dataset.action = 'dettagli';
+    btn.setAttribute('aria-label', `Vedi i dettagli di ${squadra.nome}`);
+    return btn;
+}
+
+function bottoneRimuovi(squadra) {
+    const btn = creaElemento('button', 'btn btn-sm btn-remove flex-fill', '🗑 Rimuovi');
+    btn.type = 'button';
+    btn.dataset.action = 'toggle-fav';
+    btn.setAttribute('aria-label', `Rimuovi ${squadra.nome} dai preferiti`);
+    return btn;
+}
+
+/* Card di una squadra.
+ - nei risultati (inPreferiti = false): stella + Dettagli
+ - nei preferiti (inPreferiti = true): Dettagli + Rimuovi
+ */
+export function cardSquadra(squadra, { preferita = false, inPreferiti = false } = {}) {
     const col = creaElemento('div', 'col');
 
     const card = creaElemento('article', 'card team-card h-100 text-center');
-    if (selezionata) card.classList.add('selected');
     card.dataset.id = squadra.id;
     card.tabIndex = 0;
     card.setAttribute('aria-label', `${squadra.nome}: premi Invio per vedere i dettagli`);
@@ -113,32 +133,36 @@ export function cardSquadra(squadra, { preferita = false, selezionata = false } 
         creaElemento('h3', 'h6 fw-bold mb-1', squadra.nome),
         creaElemento('p', 'small text-body-secondary mb-0', squadra.lega),
         creaElemento('p', 'small text-body-secondary mb-3', squadra.paese),
-        bottonePreferito(squadra, preferita),
     );
+
+    const azioni = creaElemento('div', 'd-flex gap-2 w-100 mt-auto justify-content-center');
+    if (inPreferiti) {
+        azioni.append(bottoneDettagli(squadra), bottoneRimuovi(squadra));
+    } else if (preferita) {
+        azioni.append(avvisoGiaPreferita());
+    } else {
+        azioni.append(bottoneAggiungi(squadra));
+    }
+    body.append(azioni);
 
     card.append(body);
     col.append(card);
     return col;
 }
-
 /* restituisce un array di card (una colonna per squadra). */
-export function cardsSquadre(squadre, { idsPreferiti, idSelezionata }) {
+export function cardsSquadre(squadre, { idsPreferiti, inPreferiti = false }) {
     return squadre.map((s) => cardSquadra(s, {
         preferita: idsPreferiti.has(s.id),
-        selezionata: s.id === idSelezionata,
+        inPreferiti,
     }));
 }
 
-// risultati eventi
+// eventi
 
 const CLASSI_ESITO = { V: 'text-bg-success', P: 'text-bg-secondary', S: 'text-bg-danger' };
 
 function rigaEvento(evento, { idSquadra = null, etichetta = '' } = {}) {
-    const li = creaElemento('li', 'event-item');
-    li.dataset.eventId = evento.id;
-    li.tabIndex = 0;
-    li.setAttribute('role', 'button');
-    li.setAttribute('aria-label', `Dettagli di ${evento.nome}`);
+    const li = creaElemento('li');
 
     // riga piccola: (squadra ·) data · ora
     const quando = [evento.formattaData(), evento.formattaOra()].filter(Boolean).join(' · ');
@@ -151,7 +175,7 @@ function rigaEvento(evento, { idSquadra = null, etichetta = '' } = {}) {
     // badge con il punteggio, colorato in base all'esito
     if (evento.haRisultato) {
         const classe = CLASSI_ESITO[evento.esitoPer(idSquadra)] ?? 'text-bg-success';
-        li.append(creaElemento('span', `badge ${classe} ms-2`, `${evento.golCasa} – ${evento.golTrasferta}`));
+        li.append(creaElemento('span', `badge ${classe} ms-2`, evento.punteggio()));
     }
     return li;
 }
@@ -166,13 +190,13 @@ function listaEventi(righe, testoVuoto) {
     return ul;
 }
 
-/* prossimi appuntamenti di tutte le preferite */
-export function appuntamenti(items, numeroErrori = 0) {
+/* prossimi appuntamenti di tutte le preferite*/
+export function appuntamenti(items, nErrori = 0) {
     const box = creaElemento('div');
 
-    if (numeroErrori) {
+    if (nErrori) {
         box.append(creaElemento('div', 'alert alert-warning py-2 small',
-            `Non è stato possibile caricare gli eventi di ${numeroErrori} squadra/e.`));
+            `Non è stato possibile caricare gli eventi di ${nErrori} squadra/e.`));
     }
 
     const card = creaElemento('div', 'card border-0 shadow-sm');
@@ -185,33 +209,29 @@ export function appuntamenti(items, numeroErrori = 0) {
     return box;
 }
 
-// dettagli squadra 
+// modale squadra
 
-/* card dei dettagli con l'intestazione (nome, stadio, anno) e il contenuto passato. */
-function contenitoreDettagli(squadra, ...contenuto) {
-    const card = creaElemento('div', 'card border-0 shadow-sm');
-    const body = creaElemento('div', 'card-body p-4');
+/* parte alta della modale: logo, campionato, paese, stadio, anno e descrizione. */
+function infoSquadra(squadra) {
+    const box = creaElemento('div', 'mb-4');
 
-    const intestazione = creaElemento('div', 'mb-4');
-    intestazione.append(creaElemento('h2', 'details-title h3 mb-0', squadra.nome));
+    const intestazione = creaElemento('div', 'text-center mb-3');
+    if (squadra.stemma) intestazione.append(stemma(squadra));
 
-    const meta = [
+    const campionato = [squadra.lega, squadra.paese].filter(Boolean).join(' · ');
+    if (campionato) intestazione.append(creaElemento('p', 'fw-semibold mb-1', campionato));
+
+    const extra = [
         squadra.stadio && `🏟 ${squadra.stadio}`,
         squadra.fondazione && `Fondata nel ${squadra.fondazione}`,
     ].filter(Boolean).join(' · ');
-    if (meta) intestazione.append(creaElemento('small', 'text-body-secondary', meta));
+    if (extra) intestazione.append(creaElemento('p', 'small text-body-secondary mb-0', extra));
 
-    body.append(intestazione, ...contenuto);
-    card.append(body);
-    return card;
-}
-
-export function dettagliLoading(squadra) {
-    return contenitoreDettagli(squadra, spinner('Carico partite e risultati...'));
-}
-
-export function dettagliErrore(squadra, messaggioErrore) {
-    return contenitoreDettagli(squadra, errore(messaggioErrore));
+    box.append(intestazione);
+    if (squadra.descrizione) {
+        box.append(creaElemento('p', 'team-description small mb-0', squadra.descrizione));
+    }
+    return box;
 }
 
 function colonnaEventi(titolo, eventi, idSquadra, testoVuoto) {
@@ -221,56 +241,30 @@ function colonnaEventi(titolo, eventi, idSquadra, testoVuoto) {
     return col;
 }
 
-export function dettagli(squadra, prossimi, ultimi) {
+/* contenuto della modale mentre arrivano prossimi eventi e ultimi risultati. */
+export function modaleSquadraLoading(squadra) {
+    const box = creaElemento('div');
+    box.append(infoSquadra(squadra), spinner('Carico partite e risultati...'));
+    return box;
+}
+
+/* contenuto della modale se il caricamento delle partite fallisce. */
+export function modaleSquadraErrore(squadra, messaggioErrore) {
+    const box = creaElemento('div');
+    box.append(infoSquadra(squadra), errore(messaggioErrore));
+    return box;
+}
+
+/* contenuto completo della modale: info squadra + prossimi eventi + ultimi risultati. */
+export function modaleSquadra(squadra, prossimi, ultimi) {
+    const box = creaElemento('div');
+
     const row = creaElemento('div', 'row g-4');
     row.append(
         colonnaEventi('Prossimi eventi', prossimi, squadra.id, 'Nessun evento in programma'),
         colonnaEventi('Ultimi risultati', ultimi, squadra.id, 'Nessun risultato disponibile'),
     );
-    return contenitoreDettagli(squadra, row);
-}
 
-// modale evento 
-
-export function modaleEvento(evento) {
-    const box = creaElemento('div');
-
-    if (evento.immagine) {
-        const img = creaElemento('img', 'img-fluid rounded mb-3');
-        img.src = evento.immagine;
-        img.alt = '';
-        box.append(img);
-    }
-
-    // casa, punteggio, trasferta
-    const punteggio = evento.haRisultato ? evento.punteggio() : 'vs';
-    const sfida = creaElemento('div', 'd-flex justify-content-center align-items-center gap-3 text-center mb-4');
-    sfida.append(
-        creaElemento('span', 'fw-bold flex-fill', evento.casa),
-        creaElemento('span', 'badge text-bg-dark fs-6', punteggio),
-        creaElemento('span', 'fw-bold flex-fill', evento.trasferta),
-    );
-
-    // elenco informazioni (solo quelle presenti)
-    const info = [
-        ['Competizione', evento.lega],
-        ['Stagione', evento.stagione],
-        ['Giornata', evento.giornata],
-        ['Data', evento.formattaData()],
-        ['Ora', evento.formattaOra()],
-        ['Stadio', evento.stadio],
-        ['Città', [evento.citta, evento.paese].filter(Boolean).join(', ')],
-        ['Stato', evento.stato],
-    ].filter(([, valore]) => valore);
-
-    const dl = creaElemento('dl', 'row mb-0 small');
-    info.forEach(([etichetta, valore]) => {
-        dl.append(
-            creaElemento('dt', 'col-5 text-body-secondary', etichetta),
-            creaElemento('dd', 'col-7', valore),
-        );
-    });
-
-    box.append(sfida, dl);
+    box.append(infoSquadra(squadra), row);
     return box;
 }

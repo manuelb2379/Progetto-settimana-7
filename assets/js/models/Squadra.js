@@ -1,5 +1,5 @@
 export class Squadra {
-    constructor({ id, nome, lega = '', paese = '', stemma = '', sport = '', stadio = '', fondazione = '' }) {
+    constructor({ id, nome, lega = '', paese = '', stemma = '', sport = '', stadio = '', fondazione = '', descrizione = '' }) {
         this.id = String(id);
         this.nome = nome;
         this.lega = lega;
@@ -8,6 +8,7 @@ export class Squadra {
         this.sport = sport;
         this.stadio = stadio;
         this.fondazione = fondazione;
+        this.descrizione = descrizione;
     }
 
     /* Crea una Squadra partendo da un oggetto "team" di TheSportsDB. */
@@ -21,6 +22,7 @@ export class Squadra {
             sport: team.strSport ?? '',
             stadio: team.strStadium ?? '',
             fondazione: team.intFormedYear ?? '',
+            descrizione: team.strDescriptionIT || team.strDescriptionEN || '',
         });
     }
 }

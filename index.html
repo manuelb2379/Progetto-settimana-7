@@ -9,6 +9,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.9/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-yEPZ7jP9S0QKiUQ0m3jjsO4ProIW7wvR9gXkI7JOGa2XVsw53Yke2bsdkBbjmmiX" crossorigin="anonymous">
 
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+
     <link rel="stylesheet" href="assets/css/style.css">
 
 </head>
@@ -16,7 +20,7 @@
 <body>
 
     <!-- barra di ricerca -->
-    <header class="hero position-relative text-center text-white py-5 px-3">
+    <header class="hero sticky-top text-center text-white py-5 px-3">
         <button type="button" id="theme-toggle" class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-3"
             aria-label="Attiva tema scuro">🌙</button>
 
@@ -33,6 +37,12 @@
 
     <main class="container main-wrapper py-5">
 
+        <!-- Risultati della ricerca (compaiono subito sotto la barra) -->
+        <section id="results-section" class="mb-5" aria-label="Risultati della ricerca">
+            <div id="results-status"></div>
+            <div id="results-row" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 cards-row"></div>
+        </section>
+
         <!-- Preferiti -->
         <section id="favorites-section" class="mb-5" aria-labelledby="favorites-title">
             <h2 id="favorites-title" class="section-title h4 mb-3">⭐ Le tue squadre preferite</h2>
@@ -43,27 +53,51 @@
             <div id="favorites-row" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 cards-row"></div>
         </section>
 
-        <!-- Risultati ricerca -->
-        <section id="results-section" class="mb-5" aria-labelledby="results-title">
-            <h2 id="results-title" class="section-title h4 mb-3">Squadre trovate</h2>
-            <div id="results-status"></div>
-            <div id="results-row" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 cards-row"></div>
+        <!-- Prossimi appuntamenti delle preferite -->
+        <section id="upcoming-section" class="mb-5" aria-labelledby="upcoming-title">
+            <h2 id="upcoming-title" class="section-title h4 mb-3">📅 Prossimi appuntamenti</h2>
+            <div id="upcoming-list"></div>
         </section>
-
-        <!-- Dettagli squadra (si apre al click su una card) -->
-        <section id="team-details" hidden></section>
 
     </main>
 
-    <!-- modale -->
-    <div class="modal fade" id="event-modal" tabindex="-1" aria-labelledby="event-modal-title" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <!-- footer -->
+    <footer class="site-footer text-white text-center py-4 px-3">
+        <p class="fw-semibold mb-3">Seguici sui social</p>
+        <ul class="list-unstyled d-flex justify-content-center gap-3 mb-3">
+            <li>
+                <a href="#"
+                    class="social-link d-inline-flex align-items-center justify-content-center rounded-circle text-white text-decoration-none"
+                    aria-label="Instagram"><i class="bi bi-instagram" aria-hidden="true"></i></a>
+            </li>
+            <li>
+                <a href="#"
+                    class="social-link d-inline-flex align-items-center justify-content-center rounded-circle text-white text-decoration-none"
+                    aria-label="Facebook"><i class="bi bi-facebook" aria-hidden="true"></i></a>
+            </li>
+            <li>
+                <a href="#"
+                    class="social-link d-inline-flex align-items-center justify-content-center rounded-circle text-white text-decoration-none"
+                    aria-label="X"><i class="bi bi-twitter-x" aria-hidden="true"></i></a>
+            </li>
+        </ul>
+        <p class="small mb-0">© 2026 SportsHub · Dati forniti da TheSportsDB</p>
+    </footer>
+
+    <!-- bottone torna su -->
+    <a href="#"
+        class="back-to-top btn btn-primary rounded-circle shadow position-fixed bottom-0 end-0 m-4 d-inline-flex align-items-center justify-content-center"
+        aria-label="Torna all'inizio della pagina"><i class="bi bi-arrow-up" aria-hidden="true"></i></a>
+
+    <!-- modale dettagli squadra -->
+    <div class="modal fade" id="team-modal" tabindex="-1" aria-labelledby="team-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title h5" id="event-modal-title">Dettagli evento</h2>
+                    <h2 class="modal-title h5" id="team-modal-title">Dettagli squadra</h2>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
                 </div>
-                <div class="modal-body" id="event-modal-body"></div>
+                <div class="modal-body" id="team-modal-body"></div>
             </div>
         </div>
     </div>

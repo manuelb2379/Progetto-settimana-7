@@ -1,116 +1,141 @@
 /* ===== Variabili ===== */
 :root {
-    --sh-navy: #1b3366;
-    --sh-accent: #1b3366;
-    --sh-bg: #f4f5f9;
-    --sh-max-width: 1080px;
+  --sh-navy: #1b3366;
+  --sh-accent: #1b3366;
+  --sh-bg: #f4f5f9;
+  --sh-max-width: 1080px;
 }
 
 [data-bs-theme="dark"] {
-    --sh-accent: #8fb0ff;
-    --sh-bg: #12151c;
+  --sh-accent: #8fb0ff;
+  --sh-bg: #12151c;
 }
 
 /* ===== Base (mobile first) ===== */
 body {
-    background-color: var(--sh-bg);
+  background-color: var(--sh-bg);
 }
 
 .text-navy {
-    color: var(--sh-navy) !important;
+  color: var(--sh-navy) !important;
 }
 
 .hero {
-    background-color: var(--sh-navy);
+  background-color: var(
+    --sh-navy
+  ); /* colore di riserva se l'immagine non si carica */
+  /* velo blu semitrasparente sopra la foto, così il testo bianco resta leggibile */
+  background-image:
+    linear-gradient(rgba(79, 100, 138, 0.85), rgba(79, 100, 138, 0.85)),
+    url("../img/header-sport.jpg");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .hero-form {
-    max-width: 540px;
+  max-width: 540px;
 }
 
 /* Contenitore con larghezza massima */
 .main-wrapper {
-    max-width: var(--sh-max-width);
-    margin-inline: auto;
+  max-width: var(--sh-max-width);
+  margin-inline: auto;
 }
 
 .section-title {
-    font-weight: 700;
+  font-weight: 700;
 }
 
 /* ===== Card squadra ===== */
 .team-card {
-    border: 0;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
-    cursor: pointer;
-    transition: transform .2s ease, box-shadow .2s ease;
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .team-card:hover,
 .team-card:focus {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, .15);
-    outline: none;
-}
-
-.team-card.selected {
-    box-shadow: 0 0 0 2px var(--sh-accent), 0 8px 20px rgba(0, 0, 0, .15);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  outline: none;
 }
 
 .team-badge {
-    width: 100px;
-    height: 100px;
-    object-fit: contain;
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
 }
 
 .btn-remove {
-    background-color: #fde8ea;
-    border: 1px solid #dc3545;
-    color: #b0101f;
-    font-weight: 600;
+  background-color: #fde8ea;
+  border: 1px solid #dc3545;
+  color: #b0101f;
+  font-weight: 600;
 }
 
 .btn-remove:hover {
-    background-color: #dc3545;
-    border-color: #dc3545;
-    color: #fff;
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
 }
 
 /* dettagli squadra */
-.details-title {
-    color: var(--sh-accent);
-    font-weight: 700;
+.team-description {
+  white-space: pre-line; /* mantiene gli a capo della descrizione */
 }
 
 .details-heading {
-    padding-bottom: .6rem;
-    border-bottom: 2px solid var(--sh-accent);
-    font-weight: 600;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--sh-accent);
+  font-weight: 600;
 }
 
 .event-list li {
-    padding: .8rem .25rem;
-    border-bottom: 1px solid var(--bs-border-color);
-}
-
-.event-item {
-    cursor: pointer;
-    border-radius: .25rem;
-    transition: background-color .15s ease;
+  padding: 0.8rem 0.25rem;
+  border-bottom: 1px solid var(--bs-border-color);
 }
 
 .event-item:hover,
 .event-item:focus {
-    background-color: var(--bs-tertiary-bg);
-    outline: none;
+  background-color: var(--bs-tertiary-bg);
+  outline: none;
+}
+
+.site-footer {
+  background-color: var(--sh-navy);
+}
+
+/* Cerchio dietro le icone dei social */
+.social-link {
+  width: 44px;
+  height: 44px;
+  background-color: #2c4a8a; /* blu un po' più chiaro del footer */
+  font-size: 1.25rem;
+  transition: background-color 0.2s ease;
+}
+
+.social-link:hover,
+.social-link:focus {
+  background-color: #3d5fa8;
+}
+
+.back-to-top {
+  width: 48px;
+  height: 48px;
+  font-size: 1.25rem;
+  z-index: 1030; /* sopra le card */
 }
 
 /* media query: 768px */
 @media (min-width: 768px) and (max-width: 1199.98px) {
-    .cards-row>.col:last-child:nth-child(odd) {
-        flex: 0 0 100%;
-        width: 100%;
-    }
+  .cards-row > .col:last-child:nth-child(odd) {
+    flex: 0 0 100%;
+    width: 100%;
+  }
 }
 
 /* media query: 1200 px */

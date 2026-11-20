@@ -1,4 +1,4 @@
-import { cercaSquadre, prossimiEventi, ultimiRisultati, dettaglioEvento } from './api.js';
+import { cercaSquadre, prossimiEventi, ultimiRisultati } from './api.js';
 import { getPreferiti, isPreferita, aggiungiPreferito, rimuoviPreferito, leggiTema, salvaTema } from './storage.js';
 import * as ui from './elementi.js';
 import { debounce } from './strumenti.js';
@@ -6,39 +6,35 @@ import { debounce } from './strumenti.js';
 const MIN_CARATTERI = 3;
 const DEBOUNCE_MS = 400;
 
-// 
+// querySelector 
 const els = {
     html: document.documentElement,
     btnTema: document.querySelector('#theme-toggle'),
     form: document.querySelector('#search-form'),
     input: document.querySelector('#search-input'),
+    risultati: document.querySelector('#results-row'),
+    risultatiStato: document.querySelector('#results-status'),
     preferiti: document.querySelector('#favorites-row'),
     preferitiVuoto: document.querySelector('#favorites-empty'),
     filtriPreferiti: document.querySelector('#favorites-filters'),
     appuntamenti: document.querySelector('#upcoming-list'),
-    risultati: document.querySelector('#results-row'),
-    risultatiStato: document.querySelector('#results-status'),
-    dettagli: document.querySelector('#team-details'),
-    modale: document.querySelector('#event-modal'),
-    modaleTitolo: document.querySelector('#event-modal-title'),
-    modaleCorpo: document.querySelector('#event-modal-body'),
+    modale: document.querySelector('#team-modal'),
+    modaleTitolo: document.querySelector('#team-modal-title'),
+    modaleCorpo: document.querySelector('#team-modal-body'),
 };
-
 // stato
 const stato = {
     risultati: [],
-    filtri: { preferiti: 'Tutti'},
-    idSelezionata: null,
+    filtroPreferiti: 'Tutti',
+    idAperta: null,
     controllerRicerca: null,
     cacheProssimi: new Map(),
-    eventi: new Map(),
-    eventoAperto: null,
     richiestaAppuntamenti: 0,
 };
 
 /* render */
 
-/* svuota il contenitore e ci inserisce i nuovi elementi. */
+/* Svuota il contenitore e ci inserisce i nuovi elementi. */
 function mostra(contenitore, ...elementi) {
     contenitore.textContent = '';
     contenitore.append(...elementi);
@@ -46,67 +42,52 @@ function mostra(contenitore, ...elementi) {
 
 const filtraPerSport = (lista, sport) => (sport === 'Tutti' ? lista : lista.filter((s) => s.sport === sport));
 
-function opzioniGriglia() {
-    return {
-        idsPreferiti: new Set(getPreferiti().map((s) => s.id)),
-        idSelezionata: stato.idSelezionata,
-    };
+function idsPreferiti() {
+    return new Set(getPreferiti().map((s) => s.id));
 }
 
-/* disegna una griglia di card con la sua barra di filtri per sport. */
-function renderGriglia({ lista, scope, contenitore, contenitoreFiltri }) {
-    const sport = stato.filtri[scope];
-
-    // I filtri si vedono solo se c'è almeno una card
-    contenitoreFiltri.hidden = lista.length === 0;
-    mostra(contenitoreFiltri, ...ui.filtri(sport, scope));
-
-    const filtrate = filtraPerSport(lista, sport);
-    if (lista.length && !filtrate.length) {
-        mostra(contenitore, ui.nessunaPerSport());
-    } else {
-        mostra(contenitore, ...ui.cardsSquadre(filtrate, opzioniGriglia()));
-    }
-}
-
+/* Card dei preferiti con la barra dei filtri per sport. */
 function renderPreferiti() {
     const preferiti = getPreferiti();
     els.preferitiVuoto.hidden = preferiti.length > 0;
-    renderGriglia({
-        lista: preferiti,
-        scope: 'preferiti',
-        contenitore: els.preferiti,
-        contenitoreFiltri: els.filtriPreferiti,
-    });
+
+    // I filtri si vedono solo se c'è almeno una preferita
+    els.filtriPreferiti.hidden = preferiti.length === 0;
+    mostra(els.filtriPreferiti, ...ui.filtri(stato.filtroPreferiti, 'preferiti'));
+
+    const filtrate = filtraPerSport(preferiti, stato.filtroPreferiti);
+    if (preferiti.length && !filtrate.length) {
+        mostra(els.preferiti, ui.nessunaPerSport());
+    } else {
+        mostra(els.preferiti, ...ui.cardsSquadre(filtrate, { idsPreferiti: idsPreferiti(), inPreferiti: true }));
+    }
 }
 
+/* Card dei risultati della ricerca (con la stella). */
 function renderRisultati() {
-    mostra(els.risultati, ...ui.cardsSquadre(stato.risultati, opzioniGriglia()));
+    mostra(els.risultati, ...ui.cardsSquadre(stato.risultati, { idsPreferiti: idsPreferiti() }));
 }
 
-/* svuota la griglia dei risultati e mostra (se passato) un messaggio/spinner/errore. */
+/* Svuota i risultati e mostra (se passato) un messaggio/spinner/errore. */
 function svuotaRisultati(...elementi) {
     stato.risultati = [];
     els.risultati.textContent = '';
     mostra(els.risultatiStato, ...elementi);
 }
 
-function registraEventi(lista) {
-    lista.forEach((e) => stato.eventi.set(e.id, e));
-}
-
-/* ricerca */
-
+//ricerca
 async function eseguiRicerca(testo) {
     const query = testo.trim();
 
     // Annullo l'eventuale richiesta precedente ancora in corso
     stato.controllerRicerca?.abort();
 
+    if (!query) {
+        svuotaRisultati(); // barra vuota: nessun risultato e nessun messaggio
+        return;
+    }
     if (query.length < MIN_CARATTERI) {
-        svuotaRisultati(ui.messaggio(
-            query ? `Scrivi almeno ${MIN_CARATTERI} caratteri.` : 'Cerca una squadra per vedere i risultati.',
-        ));
+        svuotaRisultati(ui.messaggio(`Scrivi almeno ${MIN_CARATTERI} caratteri.`));
         return;
     }
 
@@ -134,7 +115,7 @@ async function eseguiRicerca(testo) {
 
 const ricercaConDebounce = debounce(eseguiRicerca, DEBOUNCE_MS);
 
-/* preferiti */
+//preferiti
 
 function trovaSquadra(id) {
     return getPreferiti().find((s) => s.id === id) ?? stato.risultati.find((s) => s.id === id);
@@ -152,7 +133,7 @@ function togglePreferito(id) {
     }
 
     renderPreferiti();
-    renderRisultati();
+    renderRisultati(); // aggiorna la stella (piena/vuota) nei risultati
     caricaAppuntamenti();
 }
 
@@ -192,7 +173,6 @@ async function caricaAppuntamenti() {
         });
         items.sort((a, b) => (a.evento.dataOra ?? 0) - (b.evento.dataOra ?? 0));
 
-        registraEventi(items.map((i) => i.evento));
         mostra(els.appuntamenti, ui.appuntamenti(items, nErrori));
     } catch (err) {
         console.error(err);
@@ -200,67 +180,28 @@ async function caricaAppuntamenti() {
     }
 }
 
-/* squadra */
-
-function evidenziaSelezionata() {
-    document.querySelectorAll('.team-card').forEach((card) => {
-        card.classList.toggle('selected', card.dataset.id === stato.idSelezionata);
-    });
-}
-
-async function mostraDettagli(squadra) {
-    stato.idSelezionata = squadra.id;
-    evidenziaSelezionata();
-
-    els.dettagli.hidden = false;
-    mostra(els.dettagli, ui.dettagliLoading(squadra));
-    els.dettagli.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    try {
-        const [prossimi, ultimi] = await Promise.all([prossimiEventi(squadra.id), ultimiRisultati(squadra.id)]);
-        if (stato.idSelezionata !== squadra.id) return; // l'utente ha cliccato un'altra squadra
-
-        registraEventi([...prossimi, ...ultimi]);
-        mostra(els.dettagli, ui.dettagli(squadra, prossimi, ultimi));
-    } catch (err) {
-        console.error(err);
-        if (stato.idSelezionata !== squadra.id) return;
-        mostra(els.dettagli, ui.dettagliErrore(squadra, err.message || 'Impossibile caricare i dettagli.'));
-    }
-}
-
-/* modale */
-
-async function apriModaleEvento(idEvento) {
+// modale squadra
+async function apriModaleSquadra(squadra) {
     const modale = bootstrap.Modal.getOrCreateInstance(els.modale);
-    const base = stato.eventi.get(idEvento);
-    stato.eventoAperto = idEvento;
+    stato.idAperta = squadra.id;
 
-    els.modaleTitolo.textContent = base?.nome ?? 'Dettagli evento';
-    mostra(els.modaleCorpo, ui.spinner('Carico i dettagli...'));
+    els.modaleTitolo.textContent = squadra.nome;
+    mostra(els.modaleCorpo, ui.modaleSquadraLoading(squadra));
     modale.show();
 
     try {
-        const evento = (await dettaglioEvento(idEvento)) ?? base;
-        if (stato.eventoAperto !== idEvento) return;
-        if (!evento) throw new Error('Evento non trovato.');
+        const [prossimi, ultimi] = await Promise.all([prossimiEventi(squadra.id), ultimiRisultati(squadra.id)]);
+        if (stato.idAperta !== squadra.id) return; // nel frattempo è stata aperta un'altra squadra
 
-        stato.eventi.set(evento.id, evento);
-        els.modaleTitolo.textContent = evento.nome;
-        mostra(els.modaleCorpo, ui.modaleEvento(evento));
+        mostra(els.modaleCorpo, ui.modaleSquadra(squadra, prossimi, ultimi));
     } catch (err) {
         console.error(err);
-        if (stato.eventoAperto !== idEvento) return;
-        // Se ho già i dati base dell'evento li mostro comunque
-        if (base) {
-            mostra(els.modaleCorpo, ui.modaleEvento(base));
-        } else {
-            mostra(els.modaleCorpo, ui.errore(err.message || 'Impossibile caricare l\'evento.'));
-        }
+        if (stato.idAperta !== squadra.id) return;
+        mostra(els.modaleCorpo, ui.modaleSquadraErrore(squadra, err.message || 'Impossibile caricare i dettagli.'));
     }
 }
 
-/* tema chiaro/scuro */
+//tema chiaro/scuro
 
 function applicaTema(tema) {
     els.html.setAttribute('data-bs-theme', tema);
@@ -269,9 +210,13 @@ function applicaTema(tema) {
     els.btnTema.setAttribute('aria-label', scuro ? 'Attiva tema chiaro' : 'Attiva tema scuro');
 }
 
-/* event listener */
+//event listener
 
-/* click su una card: il bottone gestisce i preferiti, il resto apre i dettagli. */
+/**
+ * Click su una card:
+ * - stella o Rimuovi (data-action="toggle-fav") → aggiunge/toglie dai preferiti
+ * - pulsante Dettagli o qualunque altro punto della card → apre la modale
+ */
 function gestisciClickCard(event) {
     const card = event.target.closest('.team-card');
     if (!card) return;
@@ -283,13 +228,13 @@ function gestisciClickCard(event) {
     }
 
     const squadra = trovaSquadra(id);
-    if (squadra) mostraDettagli(squadra);
+    if (squadra) apriModaleSquadra(squadra);
 }
 
-/* tastiera: Invio/Spazio su card o evento si comportano come un click. */
+/** Tastiera: Invio/Spazio su una card si comportano come un click. */
 function gestisciTastiera(event) {
     if (event.key !== 'Enter' && event.key !== ' ') return;
-    if (!event.target.matches('.team-card, .event-item')) return;
+    if (!event.target.matches('.team-card')) return;
     event.preventDefault();
     event.target.click();
 }
@@ -297,7 +242,7 @@ function gestisciTastiera(event) {
 function gestisciClickFiltro(event) {
     const btn = event.target.closest('[data-filtro]');
     if (!btn) return;
-    stato.filtri[btn.dataset.scope] = btn.dataset.filtro;
+    stato.filtroPreferiti = btn.dataset.filtro;
     renderPreferiti();
 }
 
@@ -305,7 +250,6 @@ function init() {
     applicaTema(leggiTema());
     renderPreferiti();
     caricaAppuntamenti();
-    svuotaRisultati(ui.messaggio('Cerca una squadra per vedere i risultati.'));
 
     // Ricerca: al submit (subito) e mentre si scrive (debounce)
     els.form.addEventListener('submit', (event) => {
@@ -315,18 +259,12 @@ function init() {
     });
     els.input.addEventListener('input', () => ricercaConDebounce(els.input.value));
 
-    // card vengono ricreate a ogni render
-    els.preferiti.addEventListener('click', gestisciClickCard);
+    // Card (event delegation: le card vengono ricreate a ogni render)
     els.risultati.addEventListener('click', gestisciClickCard);
+    els.preferiti.addEventListener('click', gestisciClickCard);
 
-    // filtri
+    // Filtri dei preferiti
     els.filtriPreferiti.addEventListener('click', gestisciClickFiltro);
-
-    // eventi in modale
-    document.addEventListener('click', (event) => {
-        const item = event.target.closest('.event-item');
-        if (item) apriModaleEvento(item.dataset.eventId);
-    });
 
     document.addEventListener('keydown', gestisciTastiera);
 
